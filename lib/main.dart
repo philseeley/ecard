@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
@@ -24,10 +22,8 @@ class CardLine {
 }
 
 class _SAFAAppState extends State<SAFAApp> {
+  Icon _result;
   List<CardLine> _cardData;
-
-  String barcode = "";
-  String result = "";
 
   @override
   initState() {
@@ -36,6 +32,23 @@ class _SAFAAppState extends State<SAFAApp> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> r = [
+      Image(image: AssetImage('assets/safa-stamp.jpg'))
+    ];
+
+    if(_result != null)
+      r.add(_result);
+
+    Stack st = Stack(alignment: AlignmentDirectional.center, children: r);
+    Widget lv = Expanded(child: ListView(children: _listView()));
+
+    OrientationBuilder layout = OrientationBuilder(builder: (context, orientation) {
+      if (MediaQuery.of(context).orientation == Orientation.portrait)
+        return Column(children: [Row(children: [Spacer(), st]), lv]);
+      else
+        return Row(children: [lv, Column(children: [st, Spacer()])]);
+    });
+
     return MaterialApp(
       home:  Scaffold(
         appBar: AppBar(
@@ -44,10 +57,7 @@ class _SAFAAppState extends State<SAFAApp> {
             IconButton(icon: Icon(Icons.settings_overscan), onPressed: _scan)
           ],
         ),
-        body: Column(children: [
-          Expanded(child: ListView(children: _listView())),
-          Image(image: AssetImage('assets/safa-stamp.jpg'))
-        ])
+        body: layout
       )
     );
   }
@@ -56,11 +66,7 @@ class _SAFAAppState extends State<SAFAApp> {
   List<Widget> _listView() {
     List<Widget> w = [];
 
-    if(_cardData == null) {
-      w.add(Text(''));
-      w.add(Text('                Tap to scan'));
-    }
-    else {
+    if(_cardData != null) {
       for(CardLine l in _cardData) {
         w.add(Row(children: [
           Expanded(child: Text(l._tag)),
@@ -68,7 +74,6 @@ class _SAFAAppState extends State<SAFAApp> {
           Expanded(child: Text(l._value))
         ]));
       }
-
     }
 
     return w;
@@ -76,23 +81,25 @@ class _SAFAAppState extends State<SAFAApp> {
 
   void _scan() async {
     try {
-      ScanResult scanResult = await BarcodeScanner.scan();
-      String barcode = scanResult.rawContent;
-      bool result = _process(barcode);
+      _result = null;
+      
+      ScanResult scanResult = await BarcodeScanner.scan(options: ScanOptions(android: AndroidOptions(aspectTolerance: 0.1)));
+      
+      if(scanResult.type == ResultType.Barcode)
+        _process(scanResult.rawContent);
+      
       setState(() {});
-    } on PlatformException catch (e) {
-      setState(() => this.barcode = 'Unknown error: $e');
-    } on FormatException{
-      setState(() => this.barcode = 'null (User returned using the "back"-button before scanning anything. Result)');
     } catch (e) {
-      setState(() => this.barcode = 'Unknown error: $e');
+      setState(() => _cardData.add(CardLine(e.toString(), Colors.white, '')));
     }
   }
 
-  bool _process(String barcode) {
+  void _process(String barcode) {
     String data = '';
     String signatureValue;
 
+//    _result = Text('Fake', style: Theme.of(context).textTheme.body2.apply(color: Colors.red, fontSizeFactor: 2.0));
+    _result = Icon(Icons.close, color: Colors.red, size: 64);
     _cardData = [];
 
     LineSplitter.split(barcode).forEach((String line) {
@@ -144,9 +151,8 @@ class _SAFAAppState extends State<SAFAApp> {
 
       // Verify the data using the signature
       print('VERIFY ${signature.verify(data, publicKey)}');
-      return signature.verify(data, publicKey);
+      if(signature.verify(data, publicKey))
+        _result = Icon(Icons.check, color: Colors.green, size: 64);
     }
-
-    return false;
   }
 }
