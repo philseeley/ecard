@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
+
+import 'package:file_picker/file_picker.dart';
 
 void main() => runApp(new SAFAApp());
 
@@ -21,7 +24,18 @@ class CardLine {
   CardLine(this._tag, this._flag, this._value);
 }
 
+class ECard {
+  String _name;
+  String _publicKey;
+  Image _stamp;
+  Image _qrCode;
+
+  ECard(this._name, this._publicKey, this._stamp, this._qrCode);
+}
+
 class _SAFAAppState extends State<SAFAApp> {
+  List<ECard> _ecards = [];
+  ECard _ecard;
   Icon _result;
   List<CardLine> _cardData;
 
@@ -32,9 +46,12 @@ class _SAFAAppState extends State<SAFAApp> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> r = [
-      Image(image: AssetImage('assets/safa-stamp.jpg'))
-    ];
+    Widget _tmp = Icon(Icons.card_giftcard);
+
+    if(_ecard != null)
+      _tmp = _ecard._stamp;
+
+    List<Widget> r = [_tmp];
 
     if(_result != null)
       r.add(_result);
@@ -52,16 +69,16 @@ class _SAFAAppState extends State<SAFAApp> {
     return MaterialApp(
       home:  Scaffold(
         appBar: AppBar(
-          title: Text('SAFA'),
+          title: Text('ECards'),
           actions: <Widget>[
-            IconButton(icon: Icon(Icons.settings_overscan), onPressed: _scan)
+            IconButton(icon: Icon(Icons.add), onPressed: _addECard),
+            IconButton(icon: Icon(Icons.settings_overscan), onPressed: _scan),
           ],
         ),
         body: layout
       )
     );
   }
-//            decoration: BoxDecoration(image: DecorationImage(image: AssetImage("assets/SAFA_Header.png"))),
 
   List<Widget> _listView() {
     List<Widget> w = [];
@@ -75,6 +92,9 @@ class _SAFAAppState extends State<SAFAApp> {
         ]));
       }
     }
+    else if(_ecard != null) {
+        w.add(_ecard._qrCode);
+    }
 
     return w;
   }
@@ -82,9 +102,9 @@ class _SAFAAppState extends State<SAFAApp> {
   void _scan() async {
     try {
       _result = null;
-      
+
       ScanResult scanResult = await BarcodeScanner.scan(options: ScanOptions(android: AndroidOptions(aspectTolerance: 0.1)));
-      
+
       if(scanResult.type == ResultType.Barcode)
         _process(scanResult.rawContent);
       
@@ -114,8 +134,7 @@ class _SAFAAppState extends State<SAFAApp> {
 
         int sep = line.indexOf(':');
 
-        data += line;
-        data += '\n';
+        data += '$line\n';
 
         if (sep == -1)
         {
@@ -142,17 +161,29 @@ class _SAFAAppState extends State<SAFAApp> {
     });
 
     if(signatureValue != null) {
-      print('DATA is $data');
-      print('SIG is $signatureValue');
+      for(ECard ecard in _ecards) {
+        EOSPublicKey publicKey = EOSPublicKey.fromString(ecard._publicKey);
+        EOSSignature signature = EOSSignature.fromString(signatureValue);
 
-      EOSPublicKey publicKey = EOSPublicKey.fromString('EOS5A3nF5u2TjeYU6hpwxz2WmhKmbTX1wns3uBSCN7VupfbYP5NSa');
+        if(signature.verify(data, publicKey))
+          _result = Icon(Icons.check, color: Colors.green, size: 64);
+      }
+    }
+  }
 
-      EOSSignature signature = EOSSignature.fromString(signatureValue);
+  void _addECard() async {
+    File ecard = await FilePicker.getFile();
+    if(ecard != null) {
+      Map<String, dynamic> data = json.decode(ecard.readAsStringSync());
+      _ecard = ECard(
+        data['name'],
+        data['publickey'],
+        Image.memory(base64Decode(data['stamp'])),
+        Image.memory(base64Decode(data['qrcode']))
+      );
 
-      // Verify the data using the signature
-      print('VERIFY ${signature.verify(data, publicKey)}');
-      if(signature.verify(data, publicKey))
-        _result = Icon(Icons.check, color: Colors.green, size: 64);
+      _ecards.add(_ecard);
+      setState(() {});
     }
   }
 }

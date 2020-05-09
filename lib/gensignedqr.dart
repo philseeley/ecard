@@ -11,7 +11,9 @@ void main(List<String> args) {
   String pngFilename = args[3];
   String ecardFilename = args[4];
 
-  EOSPrivateKey privateKey = EOSPrivateKey.fromString(File(privateKeyFilename).readAsStringSync().trim());
+  Map<String, dynamic> privateKeyData = jsonDecode(File(privateKeyFilename).readAsStringSync());
+
+  EOSPrivateKey privateKey = EOSPrivateKey.fromString(privateKeyData['privatekey']);
   EOSPublicKey publicKey = privateKey.toEOSPublicKey();
 
   String data = File(dataFilename).readAsStringSync().trim();
@@ -62,8 +64,9 @@ void main(List<String> args) {
   File(pngFilename).writeAsBytesSync(qrCodeImageData);
 
   File(ecardFilename).writeAsStringSync(json.encode({
-    "pubkey": publicKey.toString(),
-    "stampimage": base64Encode(File(stampFilename).readAsBytesSync()),
+    "name": privateKeyData['name'],
+    "publickey": publicKey.toString(),
+    "stamp": base64Encode(File(stampFilename).readAsBytesSync()),
     "qrcode": base64Encode(qrCodeImageData)
   }));
 }
