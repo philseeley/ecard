@@ -118,7 +118,6 @@ class _SAFAAppState extends State<SAFAApp> {
     String data = '';
     String signatureValue;
 
-//    _result = Text('Fake', style: Theme.of(context).textTheme.body2.apply(color: Colors.red, fontSizeFactor: 2.0));
     _result = Icon(Icons.close, color: Colors.red, size: 64);
     _cardData = [];
 

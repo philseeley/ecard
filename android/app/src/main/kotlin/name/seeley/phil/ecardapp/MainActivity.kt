@@ -1,4 +1,4 @@
-package name.seeley.phil.safaapp
+package name.seeley.phil.ecardapp
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
