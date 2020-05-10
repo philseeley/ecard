@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
 import 'package:image/image.dart';
 import 'package:qr/qr.dart';
+import 'ECard.dart';
 
 void main(List<String> args) {
   String privateKeyFilename = args[0];
@@ -63,10 +64,12 @@ void main(List<String> args) {
 
   File(pngFilename).writeAsBytesSync(qrCodeImageData);
 
-  File(ecardFilename).writeAsStringSync(json.encode({
-    "name": privateKeyData['name'],
-    "publickey": publicKey.toString(),
-    "stamp": base64Encode(File(stampFilename).readAsBytesSync()),
-    "qrcode": base64Encode(qrCodeImageData)
-  }));
+  ECard ecard = ECard(
+    privateKeyData['name'],
+    publicKey.toString(),
+    base64Encode(File(stampFilename).readAsBytesSync()),
+    base64Encode(qrCodeImageData)
+  );
+
+  File(ecardFilename).writeAsStringSync(ecard.toJson());
 }

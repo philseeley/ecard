@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -7,13 +6,27 @@ import 'package:flutter/material.dart';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
 
-import 'package:file_picker/file_picker.dart';
+import 'ECard.dart';
+import 'ECardsListView.dart';
+import 'ECardsStore.dart';
 
-void main() => runApp(new SAFAApp());
+void main() => runApp(ECardApp());
 
-class SAFAApp extends StatefulWidget {
+class ECardApp extends StatelessWidget {
   @override
-  _SAFAAppState createState() => new _SAFAAppState();
+  Widget build(BuildContext context) {
+    TextStyle ts = Theme.of(context).textTheme.subhead.apply(fontWeightDelta: 4);
+
+    return MaterialApp(
+      home: Main(),
+      theme: ThemeData(textTheme: TextTheme(body1: ts, subhead: ts))
+    );
+  }
+}
+
+class Main extends StatefulWidget {
+  @override
+  _MainState createState() => _MainState();
 }
 
 class CardLine {
@@ -24,84 +37,118 @@ class CardLine {
   CardLine(this._tag, this._flag, this._value);
 }
 
-class ECard {
-  String _name;
-  String _publicKey;
-  Image _stamp;
-  Image _qrCode;
+class CurrentCard {
+  ECard ecard;
+  List<CardLine> cardLines;
+  Text result;
 
-  ECard(this._name, this._publicKey, this._stamp, this._qrCode);
+  CurrentCard();
 }
 
-class _SAFAAppState extends State<SAFAApp> {
+class _MainState extends State<Main> with WidgetsBindingObserver {
   List<ECard> _ecards = [];
-  ECard _ecard;
-  Icon _result;
-  List<CardLine> _cardData;
+  CurrentCard _currentCard;
+
+  _MainState() {
+    init();
+  }
+
+  void init() async {
+    _ecards = await ECardsStore.loadCards();
+
+    if(_ecards.length > 0) {
+      _currentCard = CurrentCard();
+      _currentCard.ecard = _ecards[0];
+      setState(() {});
+    }
+  }
 
   @override
   initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch(state)
+    {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        ECardsStore.saveCards(_ecards);
+        break;
+      case AppLifecycleState.resumed:
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget _tmp = Icon(Icons.card_giftcard);
+    String title = 'ECards';
 
-    if(_ecard != null)
-      _tmp = _ecard._stamp;
+    List<Widget> header = [];
+    List<Widget> body = [Row(children: header)];
 
-    List<Widget> r = [_tmp];
+    if(_currentCard != null) {
+      if(_currentCard.ecard != null) {
+        title = _currentCard.ecard.name;
+        header.add(_currentCard.ecard.stampImage);
+      }
 
-    if(_result != null)
-      r.add(_result);
+      if(_currentCard.result != null)
+        header.add(_currentCard.result);
+    }
 
-    Stack st = Stack(alignment: AlignmentDirectional.center, children: r);
-    Widget lv = Expanded(child: ListView(children: _listView()));
+    body.add(Expanded(child: ListView(children: _listView())));
 
-    OrientationBuilder layout = OrientationBuilder(builder: (context, orientation) {
-      if (MediaQuery.of(context).orientation == Orientation.portrait)
-        return Column(children: [Row(children: [Spacer(), st]), lv]);
-      else
-        return Row(children: [lv, Column(children: [st, Spacer()])]);
-    });
-
-    return MaterialApp(
-      home:  Scaffold(
+    return Scaffold(
         appBar: AppBar(
-          title: Text('ECards'),
+          title: Text(title),
           actions: <Widget>[
-            IconButton(icon: Icon(Icons.add), onPressed: _addECard),
+            IconButton(icon: Icon(Icons.list), onPressed: () {_listECards(context);}),
             IconButton(icon: Icon(Icons.settings_overscan), onPressed: _scan),
           ],
         ),
-        body: layout
-      )
-    );
+        body: Container(padding: EdgeInsets.all(5), child: Column(children: body))
+      );
   }
 
   List<Widget> _listView() {
     List<Widget> w = [];
 
-    if(_cardData != null) {
-      for(CardLine l in _cardData) {
-        w.add(Row(children: [
-          Expanded(child: Text(l._tag)),
-          Icon(Icons.close, color: l._flag),
-          Expanded(child: Text(l._value))
-        ]));
+    if(_currentCard != null) {
+      if(_currentCard.cardLines != null) {
+        for(CardLine l in _currentCard.cardLines) {
+          w.add(Row(children: [
+            Expanded(child: Text(l._tag)),
+            Icon(Icons.close, color: l._flag),
+            Expanded(child: Text(l._value))
+          ]));
+        }
       }
-    }
-    else if(_ecard != null) {
-        w.add(_ecard._qrCode);
+      else if(_currentCard.ecard != null) {
+          w.add(_currentCard.ecard.qrCodeImage);
+      }
     }
 
     return w;
   }
 
+  void _listECards (BuildContext context) async {
+    _currentCard.cardLines = null;
+    _currentCard.result = null;
+    _currentCard.ecard = await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) {
+        return ECardsListView(_ecards);
+      })
+    );
+  }
+
   void _scan() async {
     try {
-      _result = null;
+      _currentCard = null;
 
       ScanResult scanResult = await BarcodeScanner.scan(options: ScanOptions(android: AndroidOptions(aspectTolerance: 0.1)));
 
@@ -109,17 +156,19 @@ class _SAFAAppState extends State<SAFAApp> {
         _process(scanResult.rawContent);
       
       setState(() {});
-    } catch (e) {
-      setState(() => _cardData.add(CardLine(e.toString(), Colors.white, '')));
+    } on Exception {
+      //TODO setState(() => _cardData.add(CardLine(e.toString(), Colors.white, '')));
     }
   }
 
   void _process(String barcode) {
     String data = '';
     String signatureValue;
+    bool expired = false;
 
-    _result = Icon(Icons.close, color: Colors.red, size: 64);
-    _cardData = [];
+    _currentCard = CurrentCard();
+    _currentCard.cardLines = [];
+    _currentCard.result = Text('Unverified', style: Theme.of(context).textTheme.headline.apply(color: Colors.red, fontWeightDelta: 10));
 
     LineSplitter.split(barcode).forEach((String line) {
 
@@ -150,39 +199,32 @@ class _SAFAAppState extends State<SAFAApp> {
             tag = value;
             value = tmp;
 
-            if (DateTime.now().isAfter(dt.add(Duration(days:1))))
-              flag = Colors.red; //cancel close clear
+            if (DateTime.now().isAfter(dt.add(Duration(days:1)))) {
+              flag = Colors.red;
+              if(tag == 'Expiry')
+                expired = true;
+            }
           } on FormatException {}
         }
 
-        _cardData.add(CardLine(tag, flag, value));
+        _currentCard.cardLines.add(CardLine(tag, flag, value));
       }
     });
 
     if(signatureValue != null) {
       for(ECard ecard in _ecards) {
-        EOSPublicKey publicKey = EOSPublicKey.fromString(ecard._publicKey);
+        EOSPublicKey publicKey = EOSPublicKey.fromString(ecard.publicKey);
         EOSSignature signature = EOSSignature.fromString(signatureValue);
 
-        if(signature.verify(data, publicKey))
-          _result = Icon(Icons.check, color: Colors.green, size: 64);
+        if(signature.verify(data, publicKey)) {
+          if(expired)
+            _currentCard.result = Text('Expired', style: Theme.of(context).textTheme.headline.apply(color: Colors.orange, fontWeightDelta: 10));
+          else
+            _currentCard.result = Text('Verified', style: Theme.of(context).textTheme.headline.apply(color: Colors.green, fontWeightDelta: 10));
+          _currentCard.ecard = ecard;
+          break;
+        }
       }
-    }
-  }
-
-  void _addECard() async {
-    File ecard = await FilePicker.getFile();
-    if(ecard != null) {
-      Map<String, dynamic> data = json.decode(ecard.readAsStringSync());
-      _ecard = ECard(
-        data['name'],
-        data['publickey'],
-        Image.memory(base64Decode(data['stamp'])),
-        Image.memory(base64Decode(data['qrcode']))
-      );
-
-      _ecards.add(_ecard);
-      setState(() {});
     }
   }
 }
