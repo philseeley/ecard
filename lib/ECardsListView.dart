@@ -15,7 +15,7 @@ void createImages(ECard ecard) {
 }
 
 class ECardsListView extends StatefulWidget {
-  final List<ECard> _ecards;
+  final Map<String, ECard> _ecards;
 
   ECardsListView (this._ecards);
 
@@ -24,12 +24,13 @@ class ECardsListView extends StatefulWidget {
 }
 
 class ECardsListViewState extends State<ECardsListView> {
-  final List<ECard> _ecards;
+  final Map<String, ECard> _ecards;
 
   ECardsListViewState(this._ecards);
 
   @override
   Widget build(BuildContext context) {
+    List<ECard> ecardList = _ecards.values.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,22 +40,23 @@ class ECardsListViewState extends State<ECardsListView> {
         ],
       ),
       body: ListView.builder(itemBuilder: (BuildContext context, int i) {
-        if (i < _ecards.length)
-          return _buildReceiptRow(_ecards[i]);
+        if (i < ecardList.length)
+          return _buildReceiptRow(ecardList[i]);
 
         return null;
       }));
     }
 
   void _onDismissed (DismissDirection direction, ECard ecard) {
-    _ecards.remove(ecard);
+    _ecards.remove(ecard.publicKey);
+    ECardsStore.saveCards(_ecards);
   }
 
   void _addECard() async {
     File f = await FilePicker.getFile();
     if(f != null) {
       ECard ecard = ECard.fromJson(f.readAsStringSync());
-      _ecards.add(ecard);
+      _ecards[ecard.publicKey] = ecard;
       createImages(ecard);
       ECardsStore.saveCards(_ecards);
 
@@ -63,8 +65,7 @@ class ECardsListViewState extends State<ECardsListView> {
   }
 
   Widget _buildReceiptRow(ECard ecard) {
-    //List<Widget> w = [];
-    Text text = Text(ecard.name, style: Theme.of(context).textTheme.headline.apply(fontWeightDelta: 10));
+    Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headline.apply(fontWeightDelta: 10));
     ListTile tile;
 
     if(ecard.stampImage != null)
@@ -72,8 +73,6 @@ class ECardsListViewState extends State<ECardsListView> {
     else
       tile = ListTile(title: text, onTap: () {_select(ecard);});
     
-    //w.add(Text(ecard.name, style: Theme.of(context).textTheme.headline.apply(fontWeightDelta: 10)));
-
     return Dismissible(
       key: GlobalKey(),
       secondaryBackground: ListTile(trailing: Icon(Icons.delete)),

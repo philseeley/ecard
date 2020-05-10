@@ -65,7 +65,7 @@ void main(List<String> args) {
   File(pngFilename).writeAsBytesSync(qrCodeImageData);
 
   ECard ecard = ECard(
-    privateKeyData['name'],
+    privateKeyData['organisation'],
     publicKey.toString(),
     base64Encode(File(stampFilename).readAsBytesSync()),
     base64Encode(qrCodeImageData)

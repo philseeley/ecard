@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class ECard {
-  String name;
+  String organisation;
   String publicKey;
   String stamp;
   String qrCode;
@@ -9,12 +9,12 @@ class ECard {
   dynamic stampImage;
   dynamic qrCodeImage;
 
-  ECard(this.name, this.publicKey, this.stamp, this.qrCode);
+  ECard(this.organisation, this.publicKey, this.stamp, this.qrCode);
   
   static ECard fromData(dynamic data) {
-    print('LOADING ======================== ${data['name']}');
+    print('LOADING ======================== ${data['organisation']}');
     return ECard(
-      data['name'],
+      data['organisation'],
       data['publickey'],
       data['stamp'],
       data['qrcode']
@@ -27,7 +27,7 @@ class ECard {
 
   dynamic toData() {
     return {
-      'name': name,
+      'organisation': organisation,
       'publickey': publicKey,
       "stamp": stamp,
       "qrcode": qrCode

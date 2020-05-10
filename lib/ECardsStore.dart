@@ -16,11 +16,11 @@ void createImages(ECard ecard) {
 class ECardsStore {
   static File _store;
 
-  static Future<List<ECard>> loadCards() async {
+  static Future<Map<String,ECard>> loadCards() async {
     Directory directory = await path_provider.getApplicationDocumentsDirectory();
     _store = File('${directory.path}/ecards.json');
 
-    List<ECard> ecards = [];
+    Map<String, ECard> ecards = {};
 
     try {
       dynamic data = json.decode(_store.readAsStringSync());
@@ -28,20 +28,20 @@ class ECardsStore {
       for(dynamic cardData in data) {
         ECard ecard = ECard.fromData(cardData);
         createImages(ecard);
-        ecards.add(ecard);
+        ecards[ecard.publicKey] = ecard;
       }
     } on Exception {}
 
     return ecards;
   }
 
-  static saveCards (List<ECard> ecards) {
+  static saveCards (Map<String, ECard> ecards) {
     List<dynamic> data = [];
 
-    for(ECard ecard in ecards) {
-      print('SAVING ================ ${ecard.name}');
+    ecards.forEach((publickey, ecard) {
+      print('SAVING ================ ${ecard.organisation}');
       data.add(ecard.toData());
-    }
+    });
     _store.writeAsStringSync(json.encode(data));
   }
 }

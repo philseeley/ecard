@@ -46,7 +46,7 @@ class CurrentCard {
 }
 
 class _MainState extends State<Main> with WidgetsBindingObserver {
-  List<ECard> _ecards = [];
+  Map<String, ECard> _ecards = {};
   CurrentCard _currentCard;
 
   _MainState() {
@@ -58,7 +58,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
     if(_ecards.length > 0) {
       _currentCard = CurrentCard();
-      _currentCard.ecard = _ecards[0];
+      _currentCard.ecard = _ecards.values.toList()[0];
       setState(() {});
     }
   }
@@ -92,7 +92,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
     if(_currentCard != null) {
       if(_currentCard.ecard != null) {
-        title = _currentCard.ecard.name;
+        title = _currentCard.ecard.organisation;
         header.add(_currentCard.ecard.stampImage);
       }
 
@@ -212,7 +212,9 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     });
 
     if(signatureValue != null) {
-      for(ECard ecard in _ecards) {
+      for(String k in _ecards.keys) {
+        ECard ecard = _ecards[k];
+
         EOSPublicKey publicKey = EOSPublicKey.fromString(ecard.publicKey);
         EOSSignature signature = EOSSignature.fromString(signatureValue);
 
