@@ -136,14 +136,19 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   }
 
   void _listECards (BuildContext context) async {
-    _currentCard.cardLines = null;
-    _currentCard.result = null;
-    _currentCard.ecard = await Navigator.push(
+    _currentCard = null;
+
+    ECard ecard = await Navigator.push(
       context, 
       MaterialPageRoute(builder: (context) {
         return ECardsListView(_ecards);
       })
     );
+
+    if(ecard != null) {
+      _currentCard = CurrentCard();
+      _currentCard.ecard = ecard;
+    }
   }
 
   void _scan() async {
