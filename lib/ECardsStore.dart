@@ -39,7 +39,6 @@ class ECardsStore {
     List<dynamic> data = [];
 
     ecards.forEach((publickey, ecard) {
-      print('SAVING ================ ${ecard.organisation}');
       data.add(ecard.toData());
     });
     _store.writeAsStringSync(json.encode(data));

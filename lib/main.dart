@@ -161,9 +161,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         _process(scanResult.rawContent);
       
       setState(() {});
-    } on Exception {
-      //TODO setState(() => _cardData.add(CardLine(e.toString(), Colors.white, '')));
-    }
+    } on Exception {}
   }
 
   void _process(String barcode) {
@@ -206,7 +204,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
             if (DateTime.now().isAfter(dt.add(Duration(days:1)))) {
               flag = Colors.red;
-              if(tag == 'Expiry')
+              if(tag == 'Expires')
                 expired = true;
             }
           } on FormatException {}

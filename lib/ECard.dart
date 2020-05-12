@@ -12,7 +12,6 @@ class ECard {
   ECard(this.organisation, this.publicKey, this.stamp, this.qrCode);
   
   static ECard fromData(dynamic data) {
-    print('LOADING ======================== ${data['organisation']}');
     return ECard(
       data['organisation'],
       data['publickey'],
