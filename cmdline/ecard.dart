@@ -76,21 +76,8 @@ Where arguments are:
     EOSSignature signature = privateKey.signString(data);
     data += signature.toString();
 
-    QrCode qrCode;
-    int type = 1;
-
-    while (true) {
-      try {
-        qrCode = QrCode(type, QrErrorCorrectLevel.M);
-        qrCode.addData(data);
-        qrCode.make();
-        break;
-      } catch (e) {
-        ++type;
-        if(type > 40)
-          throw ArgumentError('"$dataFilename" to big to encode');
-      }
-    }
+    QrCode qrCode = QrCode.fromData(data: data, errorCorrectLevel: QrErrorCorrectLevel.M);
+    qrCode.make();
 
     int size = qrCode.moduleCount;
 
