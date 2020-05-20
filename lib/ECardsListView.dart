@@ -65,7 +65,7 @@ class ECardsListViewState extends State<ECardsListView> {
   }
 
   Widget _buildReceiptRow(ECard ecard) {
-    Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headline.apply(fontWeightDelta: 10));
+    Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headline5.apply(fontWeightDelta: 10));
     ListTile tile;
 
     if(ecard.stampImage != null)

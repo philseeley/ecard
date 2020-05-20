@@ -15,11 +15,11 @@ void main() => runApp(ECardApp());
 class ECardApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    TextStyle ts = Theme.of(context).textTheme.subhead.apply(fontWeightDelta: 4);
+    TextStyle ts = Theme.of(context).textTheme.subtitle1.apply(fontWeightDelta: 4);
 
     return MaterialApp(
       home: Main(),
-      theme: ThemeData(textTheme: TextTheme(body1: ts, subhead: ts))
+      theme: ThemeData(textTheme: TextTheme(bodyText2: ts, subtitle1: ts))
     );
   }
 }
@@ -128,7 +128,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         }
       }
       else if(_currentCard.ecard != null) {
-          w.add(_currentCard.ecard.qrCodeImage);
+        w.add(_currentCard.ecard.qrCodeImage);
       }
     }
 
@@ -171,7 +171,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
     _currentCard = CurrentCard();
     _currentCard.cardLines = [];
-    _currentCard.result = Text('Unverified', style: Theme.of(context).textTheme.headline.apply(color: Colors.red, fontWeightDelta: 10));
+    _currentCard.result = Text('Unverified', style: Theme.of(context).textTheme.headline5.apply(color: Colors.red, fontWeightDelta: 10));
 
     LineSplitter.split(barcode).forEach((String line) {
 
@@ -223,9 +223,9 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
         if(signature.verify(data, publicKey)) {
           if(expired)
-            _currentCard.result = Text('Expired', style: Theme.of(context).textTheme.headline.apply(color: Colors.orange, fontWeightDelta: 10));
+            _currentCard.result = Text('Expired', style: Theme.of(context).textTheme.headline5.apply(color: Colors.orange, fontWeightDelta: 10));
           else
-            _currentCard.result = Text('Verified', style: Theme.of(context).textTheme.headline.apply(color: Colors.green, fontWeightDelta: 10));
+            _currentCard.result = Text('Verified', style: Theme.of(context).textTheme.headline5.apply(color: Colors.green, fontWeightDelta: 10));
           _currentCard.ecard = ecard;
           break;
         }
