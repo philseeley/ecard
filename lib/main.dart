@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 
-import 'package:barcode_scan/barcode_scan.dart';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
+import 'package:flutter_qr_reader/qrcode_reader_view.dart';
 
 import 'ECard.dart';
 import 'ECardsListView.dart';
@@ -85,6 +85,10 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    return OrientationBuilder(builder: _build);
+  }
+
+  Widget _build(BuildContext context, Orientation orientation) {
     String title = 'ECards';
 
     List<Widget> header = [];
@@ -151,20 +155,23 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     }
   }
 
-  void _scan() async {
-    try {
-      _currentCard = null;
+  void _scan() {
+    _currentCard = null;
+    setState(() {});
 
-      ScanResult scanResult = await BarcodeScanner.scan(options: ScanOptions(android: AndroidOptions(aspectTolerance: 0.1)));
-
-      if(scanResult.type == ResultType.Barcode)
-        _process(scanResult.rawContent);
-      
-      setState(() {});
-    } on Exception {}
+    Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) {
+        return QrcodeReaderView(
+          onScan: _process,
+          headerWidget: Text('Header'),
+          helpWidget: Text('Help'),
+        );
+      })
+    );
   }
 
-  void _process(String barcode) {
+  Future _process(String barcode) {
     String data = '';
     String signatureValue;
     bool expired = false;
@@ -231,5 +238,9 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         }
       }
     }
+
+    Navigator.pop(context);
+    setState(() {});
+    return null;
   }
 }
