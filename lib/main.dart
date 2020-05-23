@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 import 'package:eosdart_ecc/eosdart_ecc.dart';
-import 'package:flutter_qr_reader/qrcode_reader_view.dart';
+import 'package:qrscan/qrscan.dart' as scanner;
 
 import 'ECard.dart';
 import 'ECardsListView.dart';
@@ -57,9 +57,10 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     _ecards = await ECardsStore.loadCards();
 
     if(_ecards.length > 0) {
-      _currentCard = CurrentCard();
-      _currentCard.ecard = _ecards.values.toList()[0];
-      setState(() {});
+      setState(() {
+        _currentCard = CurrentCard();
+        _currentCard.ecard = _ecards.values.toList()[0];
+      });
     }
   }
 
@@ -85,10 +86,6 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return OrientationBuilder(builder: _build);
-  }
-
-  Widget _build(BuildContext context, Orientation orientation) {
     String title = 'ECards';
 
     List<Widget> header = [];
@@ -104,7 +101,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         header.add(_currentCard.result);
     }
 
-    body.add(Expanded(child: ListView(children: _listView())));
+    body.add(Expanded(child: _body()));
 
     return Scaffold(
         appBar: AppBar(
@@ -118,25 +115,30 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
       );
   }
 
-  List<Widget> _listView() {
-    List<Widget> w = [];
-
+  Widget _body() {
     if(_currentCard != null) {
       if(_currentCard.cardLines != null) {
+        List<Widget> list = [];
+
         for(CardLine l in _currentCard.cardLines) {
-          w.add(Row(children: [
+          list.add(Row(children: [
             Expanded(child: Text(l._tag)),
             Icon(Icons.close, color: l._flag),
             Expanded(child: Text(l._value))
           ]));
         }
+
+        return ListView(children: list);
       }
       else if(_currentCard.ecard != null) {
-        w.add(_currentCard.ecard.qrCodeImage);
+        return InkWell(
+          child: _currentCard.ecard.qrCodeImage,
+          onLongPress: _imageDetails,
+        );
       }
     }
 
-    return w;
+    return Container();
   }
 
   void _listECards (BuildContext context) async {
@@ -149,29 +151,35 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
       })
     );
 
-    if(ecard != null) {
-      _currentCard = CurrentCard();
-      _currentCard.ecard = ecard;
-    }
+    setState(() {
+      if(ecard != null) {
+        _currentCard = CurrentCard();
+        _currentCard.ecard = ecard;
+      }
+    });
   }
 
-  void _scan() {
+  void _scan() async {
     _currentCard = null;
-    setState(() {});
 
-    Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) {
-        return QrcodeReaderView(
-          onScan: _process,
-          headerWidget: Text('Header'),
-          helpWidget: Text('Help'),
-        );
-      })
-    );
+    String result = await scanner.scan();
+
+    setState(() {
+      if(result != null)
+        _process(result);
+    });
   }
 
-  Future _process(String barcode) {
+  void _imageDetails() async {
+    String result = await scanner.scanBytes(base64Decode(_currentCard.ecard.qrCode));
+
+    setState(() {
+      if(result != null)
+        _process(result);
+    });
+  }
+
+  void _process(String barcode) {
     String data = '';
     String signatureValue;
     bool expired = false;
@@ -238,9 +246,5 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         }
       }
     }
-
-    Navigator.pop(context);
-    setState(() {});
-    return null;
   }
-}
+ }
