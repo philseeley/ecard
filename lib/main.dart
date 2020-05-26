@@ -46,7 +46,7 @@ class CurrentCard {
 }
 
 class _MainState extends State<Main> with WidgetsBindingObserver {
-  Map<String, ECard> _ecards = {};
+  ECards _ecards;
   CurrentCard _currentCard;
 
   _MainState() {
@@ -56,10 +56,10 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   void init() async {
     _ecards = await ECardsStore.loadCards();
 
-    if(_ecards.length > 0) {
+    if(_ecards.defaultPublicKey != null) {
       setState(() {
         _currentCard = CurrentCard();
-        _currentCard.ecard = _ecards.values.toList()[0];
+        _currentCard.ecard = _ecards.cards[_ecards.defaultPublicKey];
       });
     }
   }
@@ -131,9 +131,16 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         return ListView(children: list);
       }
       else if(_currentCard.ecard != null) {
-        return InkWell(
-          child: _currentCard.ecard.qrCodeImage,
-          onLongPress: _imageDetails,
+        return SingleChildScrollView(
+          child: InkWell(
+            child: Column(
+              children: [
+                _currentCard.ecard.qrCodeImage,
+                Text("Press to decode")
+              ]
+            ),
+            onLongPress: _imageDetails,
+          )
         );
       }
     }
@@ -230,8 +237,8 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     });
 
     if(signatureValue != null) {
-      for(String k in _ecards.keys) {
-        ECard ecard = _ecards[k];
+      for(String k in _ecards.cards.keys) {
+        ECard ecard = _ecards.cards[k];
 
         EOSPublicKey publicKey = EOSPublicKey.fromString(ecard.publicKey);
         EOSSignature signature = EOSSignature.fromString(signatureValue);

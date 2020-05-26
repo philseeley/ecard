@@ -13,34 +13,47 @@ void createImages(ECard ecard) {
   } on Exception {}
 }
 
+class ECards {
+  Map<String,ECard> cards = {};
+  String defaultPublicKey;
+}
+
 class ECardsStore {
   static File _store;
 
-  static Future<Map<String,ECard>> loadCards() async {
-    Directory directory = await path_provider.getApplicationDocumentsDirectory();
-    _store = File('${directory.path}/ecards.json');
-
-    Map<String, ECard> ecards = {};
+  static Future<ECards> loadCards() async {
+    ECards ecards = ECards();
 
     try {
+      Directory directory = await path_provider.getApplicationDocumentsDirectory();
+      _store = File('${directory.path}/ecards.json');
+
       dynamic data = json.decode(_store.readAsStringSync());
 
-      for(dynamic cardData in data) {
+      ecards.defaultPublicKey = data['defaultPublicKey'];
+
+      for(dynamic cardData in data['cards']) {
         ECard ecard = ECard.fromData(cardData);
         createImages(ecard);
-        ecards[ecard.publicKey] = ecard;
+        ecards.cards[ecard.publicKey] = ecard;
       }
-    } on Exception {}
+    } catch (e) {}
 
     return ecards;
   }
 
-  static saveCards (Map<String, ECard> ecards) {
-    List<dynamic> data = [];
+  static saveCards (ECards ecards) {
+    List<dynamic> cardsData = [];
 
-    ecards.forEach((publickey, ecard) {
-      data.add(ecard.toData());
+    dynamic data = {
+      'defaultPublicKey': ecards.defaultPublicKey,
+      'cards': cardsData
+    };
+
+    ecards.cards.forEach((publickey, ecard) {
+      cardsData.add(ecard.toData());
     });
+
     _store.writeAsStringSync(json.encode(data));
   }
 }

@@ -15,7 +15,7 @@ void createImages(ECard ecard) {
 }
 
 class ECardsListView extends StatefulWidget {
-  final Map<String, ECard> _ecards;
+  final ECards _ecards;
 
   ECardsListView (this._ecards);
 
@@ -24,13 +24,13 @@ class ECardsListView extends StatefulWidget {
 }
 
 class ECardsListViewState extends State<ECardsListView> {
-  final Map<String, ECard> _ecards;
+  final ECards _ecards;
 
   ECardsListViewState(this._ecards);
 
   @override
   Widget build(BuildContext context) {
-    List<ECard> ecardList = _ecards.values.toList();
+    List<ECard> ecardList = _ecards.cards.values.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -48,19 +48,26 @@ class ECardsListViewState extends State<ECardsListView> {
     }
 
   void _onDismissed (DismissDirection direction, ECard ecard) {
-    _ecards.remove(ecard.publicKey);
+    _ecards.cards.remove(ecard.publicKey);
+    if(_ecards.cards.length > 0 && _ecards.defaultPublicKey == ecard.publicKey)
+      setState(() {
+        _ecards.defaultPublicKey = _ecards.cards.keys.first;
+      });
     ECardsStore.saveCards(_ecards);
   }
 
   void _addECard() async {
     File f = await FilePicker.getFile();
-    if(f != null) {
-      ECard ecard = ECard.fromJson(f.readAsStringSync());
-      _ecards[ecard.publicKey] = ecard;
-      createImages(ecard);
-      ECardsStore.saveCards(_ecards);
 
-      setState(() {});
+    if(f != null) {
+      setState(() {
+        ECard ecard = ECard.fromJson(f.readAsStringSync());
+        _ecards.cards[ecard.publicKey] = ecard;
+        createImages(ecard);
+        if(_ecards.cards.length == 1)
+          _ecards.defaultPublicKey = ecard.publicKey;
+        ECardsStore.saveCards(_ecards);
+      });
     }
   }
 
@@ -68,10 +75,16 @@ class ECardsListViewState extends State<ECardsListView> {
     Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headline5.apply(fontWeightDelta: 10));
     ListTile tile;
 
-    if(ecard.stampImage != null)
-      tile = ListTile(leading: ecard.stampImage, title: text, onTap: () {_select(ecard);});
-    else
-      tile = ListTile(title: text, onTap: () {_select(ecard);});
+    tile = ListTile(
+      leading: ecard?.stampImage,
+      title: text,
+      onTap: () {_select(ecard);},
+      trailing: Radio<String>(value: ecard.publicKey, groupValue: _ecards.defaultPublicKey, onChanged: (value) {
+        setState(() {
+          _ecards.defaultPublicKey = value;
+        });
+      }),
+    );
     
     return Dismissible(
       key: GlobalKey(),
