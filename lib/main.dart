@@ -207,7 +207,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
         int sep = line.indexOf(':');
 
-        data += '$line\n';
+        data += line.trim();
 
         if (sep == -1)
         {

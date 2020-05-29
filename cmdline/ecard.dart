@@ -70,13 +70,18 @@ Where arguments are:
     EOSPrivateKey privateKey = EOSPrivateKey.fromString(privateKeyData['privatekey']);
     EOSPublicKey publicKey = privateKey.toEOSPublicKey();
 
-    String data = File(dataFilename).readAsStringSync().trim();
-    data += '\n';
+    String data = '';
+    String lines = File(dataFilename).readAsStringSync().trim();
+
+    LineSplitter.split(lines).forEach((String line) {
+      data += line.trim();
+    });
 
     EOSSignature signature = privateKey.signString(data);
-    data += signature.toString();
+    lines += '\n';
+    lines += signature.toString();
 
-    QrCode qrCode = QrCode.fromData(data: data, errorCorrectLevel: QrErrorCorrectLevel.M);
+    QrCode qrCode = QrCode.fromData(data: lines, errorCorrectLevel: QrErrorCorrectLevel.M);
     qrCode.make();
 
     int size = qrCode.moduleCount;
