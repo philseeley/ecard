@@ -11,12 +11,16 @@ class GenKeysCommand extends Command {
   final description = 'Generates public/private key pairs';
 
   void showUsage() {
-    print('''$invocation
+    print('''$usage
 
 Where arguments are:
   <organisation name> the name of the organisation the keys are for.
   <key file>          the file to store the generated keys in.
 ''');
+  }
+
+  GenKeysCommand() {
+    argParser.addOption('stamp', help: 'the stamp image to use', valueHelp: 'image file');
   }
 
   void run() {
@@ -27,11 +31,17 @@ Where arguments are:
 
     String organisation = argResults.rest[0];
     String privateKeyFilename = argResults.rest[1];
+    String stampFilename = argResults['stamp'];
 
-    File(privateKeyFilename).writeAsStringSync(json.encode({
+    dynamic data = {
       "organisation": organisation,
       "privatekey": EOSPrivateKey.fromRandom().toString()
-    }));
+    };
+
+    if(stampFilename != null)
+      data['stamp'] = base64Encode(File(stampFilename).readAsBytesSync());
+
+    File(privateKeyFilename).writeAsStringSync(json.encode(data));
 
     exitCode = 0;
   }
@@ -42,30 +52,52 @@ class SignQRCommand extends Command {
   final description = 'Generates a signed QR code';
 
   void showUsage() {
-    print('''$invocation
+    print('''$usage
 
 Where arguments are:
   <key file>    the name of the key file.
-  <stamp file>  the name of the PNG stamp file.
   <data file>   the name of the file containg the data to sign.
-  <png file>    the name of the PNG file to output.
-  <ecard file>  the name of the ECARD file to output.
 ''');
   }
 
+  SignQRCommand() {
+    argParser.addOption('stamp', help: 'the stamp image to use', valueHelp: 'image file');
+    argParser.addOption('png', help: 'the output PNG filename - defauls to <data file>.png', valueHelp: 'filename');
+    argParser.addOption('ecard', help: 'the output ECard filename - defauls to <data file>.ecard', valueHelp: 'filename');
+  }
+
   void run() {
-    if(argResults.rest.length != 5) {
+    if(argResults.rest.length != 2) {
       showUsage();
       return;
     }
 
     String privateKeyFilename = argResults.rest[0];
-    String stampFilename = argResults.rest[1];
-    String dataFilename = argResults.rest[2];
-    String pngFilename = argResults.rest[3];
-    String ecardFilename = argResults.rest[4];
+    String dataFilename = argResults.rest[1];
+
+    int sep = dataFilename.lastIndexOf('.');
+    String baseFilename = sep == -1 ? dataFilename : dataFilename.substring(0, sep);
+
+    String stampFilename = argResults['stamp'];
+    String pngFilename = argResults['png'];
+    String ecardFilename = argResults['ecard'];
+
+    if(pngFilename   == null) pngFilename = '$baseFilename.png';
+    if(ecardFilename == null) ecardFilename = '$baseFilename.ecard';
 
     Map<String, dynamic> privateKeyData = jsonDecode(File(privateKeyFilename).readAsStringSync());
+
+    String stamp;
+
+    if(stampFilename == null)
+      stamp = privateKeyData['stamp'];
+    else
+      stamp = base64Encode(File(stampFilename).readAsBytesSync());
+
+    if(stamp == null) {
+      print('No stamp image specified and no stamp image found in "$privateKeyFilename".\n');
+      showUsage();
+    }
 
     EOSPrivateKey privateKey = EOSPrivateKey.fromString(privateKeyData['privatekey']);
     EOSPublicKey publicKey = privateKey.toEOSPublicKey();
@@ -112,7 +144,7 @@ Where arguments are:
     ECard ecard = ECard(
       privateKeyData['organisation'],
       publicKey.toString(),
-      base64Encode(File(stampFilename).readAsBytesSync()),
+      stamp,
       base64Encode(qrCodeImageData)
     );
 
