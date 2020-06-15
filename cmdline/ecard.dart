@@ -56,14 +56,14 @@ class SignQRCommand extends Command {
 
 Where arguments are:
   <key file>    the name of the key file.
-  <data file>   the name of the file containg the data to sign.
+  <data file>   the name of the file contaning the data to sign.
 ''');
   }
 
   SignQRCommand() {
     argParser.addOption('stamp', help: 'the stamp image to use', valueHelp: 'image file');
-    argParser.addOption('png', help: 'the output PNG filename - defauls to <data file>.png', valueHelp: 'filename');
-    argParser.addOption('ecard', help: 'the output ECard filename - defauls to <data file>.ecard', valueHelp: 'filename');
+    argParser.addOption('png', help: 'the output PNG filename - defaults to <data file>.png', valueHelp: 'filename');
+    argParser.addOption('ecard', help: 'the output ECard filename - defaults to <data file>.ecard', valueHelp: 'filename');
   }
 
   void run() {

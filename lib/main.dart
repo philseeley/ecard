@@ -19,7 +19,8 @@ class ECardApp extends StatelessWidget {
 
     return MaterialApp(
       home: Main(),
-      theme: ThemeData(textTheme: TextTheme(bodyText2: ts, subtitle1: ts))
+      theme: ThemeData(textTheme: TextTheme(bodyText2: ts, subtitle1: ts)),
+      debugShowCheckedModeBanner: false
     );
   }
 }
