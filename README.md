@@ -1,6 +1,6 @@
 # ECard - Electronic Club Membership Cards
 
-ECards are digitally signed QR Codes for club membership cards. Because they are digitally signed, they can be scanned for verification using the ECard Android or iPhone app.
+ECards are digitally signed QR Codes for club membership cards. They are digitally signed, so they can be scanned for verification using the ECard Android or iPhone app.
 
 ## Generating Public/Private Key Pairs
 
@@ -26,9 +26,7 @@ The stamp image is added to all issued ecards and shown when a QR Code if verifi
 
 ## Generate Signed QR Code ECards
 
-Once you have your keys, you can issue ecards. The data in an ecard consists of name/value
-pairs, one per line and separated by a ":". Any names and values can be used, but special
-processing is performed if the name represents a data in the form **YYYY-MM-DD** and the card is considered expired if the value is **"Expires"**. For example the file **joe-blogs.txt** could contain:
+Once you have your keys, you can issue ecards. The data in an ecard consists of name/value pairs, one per line and separated by a ":". Any names and values can be used, but special processing is performed if the name represents a date in the form **YYYY-MM-DD** and the card is considered expired if the value is **"Expires"**. For example the file **joe-blogs.txt** could contain:
 ```
 Member#:1234
 2021-08-21:Expires
@@ -68,18 +66,16 @@ The **.ecard** can be loaded into the ECard phone app for display, but also to e
 
 **Note:** you must load an **.ecard** into the phone app in order to verify QR Codes for that club.
 
-After emailing the **.ecard**, save to the phone and then load into the ECard app through the ![](./examples/app-list-cards-icon.png) and ![](./examples/app-add-card-icon.png) buttons:
+After receiving your **.ecard** by email, save it to your phone and then load it into the ECard app through the ![](./examples/screenshots/app-list-cards-icon.png) and ![](./examples/screenshots/app-add-card-icon.png) buttons. If you have added than one ECard, you can select which ECard is displayed when the app is opened:
 
-![](./examples/app-list-cards.png)
+![](./examples/screenshots/app-list-cards.png)
 
-Selecting the imported ecard will display its QR Code:
+Selecting the imported ECard will display its QR Code and if you press and hold the QR Code its data will be displayed, with any expired items marked with an **X**:
 
-![](./examples/app-qrcode.png)
+![](./examples/screenshots/app-qrcode.png) ![](./examples/screenshots/app-qrcode-data.png)
 
-If you press and hold the QR Code its data will be displayed:
+Once you have loaded an **.ecard** into the app, you can then use the ![](./examples/screenshots/app-scan-icon.png) button to scan and verify other QR Codes:
 
-![](./examples/app-qrcode-data.png)
+![](./examples/screenshots/app-qrcode-expired.png) ![](./examples/screenshots/app-qrcode-unverified.png)
 
-Once you have loaded a **.ecard** into the app, you can then use the ![](./examples/app-scan-icon.png) button to scan and verify other QR Codes:
-
-![](./examples/app-qrcode-expired.png)
+An **Expired** result indicates that the signature was correctly verified, but the ECard has expired. An **Unverified** result indicates that either no signature was found or the data has been modified since the ECard was issued.
