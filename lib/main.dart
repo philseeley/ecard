@@ -1,10 +1,12 @@
+import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 
 import 'package:eosdart_ecc/eosdart_ecc.dart';
-import 'package:qrscan/qrscan.dart' as scanner;
+import 'package:qrcode_flutter/qrcode_flutter.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'ECard.dart';
 import 'ECardsListView.dart';
@@ -47,6 +49,10 @@ class CurrentCard {
 }
 
 class _MainState extends State<Main> with WidgetsBindingObserver {
+  QRCaptureController _controller = QRCaptureController();
+
+  bool _showScan = false;
+
   ECards _ecards;
   CurrentCard _currentCard;
 
@@ -69,6 +75,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _controller.onCapture(_process);
   }
 
   @override
@@ -145,6 +152,10 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         );
       }
     }
+    else if(_showScan) {
+      _controller.resume();
+      return QRCaptureView(controller: _controller);
+    }
 
     return Container();
   }
@@ -169,17 +180,16 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
 
   void _scan() async {
     _currentCard = null;
-
-    String result = await scanner.scan();
-
     setState(() {
-      if(result != null)
-        _process(result);
+      _showScan = true;
     });
   }
 
   void _imageDetails() async {
-    String result = await scanner.scanBytes(base64Decode(_currentCard.ecard.qrCode));
+    Directory directory = await path_provider.getApplicationDocumentsDirectory();
+    File tmp = File('${directory.path}/_tmp.png');
+    tmp.writeAsBytesSync(base64Decode(_currentCard.ecard.qrCode));
+    String result = await QRCaptureController.getQrCodeByImagePath(tmp.path);
 
     setState(() {
       if(result != null)
@@ -188,6 +198,8 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   }
 
   void _process(String barcode) {
+    _showScan = false;
+    _controller.pause();
     String data = '';
     String signatureValue;
     bool expired = false;
@@ -254,5 +266,8 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         }
       }
     }
+    setState(() {
+      
+    });
   }
  }

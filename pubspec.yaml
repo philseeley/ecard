@@ -27,8 +27,7 @@ dependencies:
   image:
   eosdart_ecc:
   qr:
-  qrscan:
-  args:
+  qrcode_flutter:
   file_picker:
   path_provider:
 
