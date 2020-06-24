@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Your Camera is only accessed to scan QR Codes</string>
+        <key>io.flutter.embedded_views_preview</key>
+        <true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Your images are only accessed locally on your phone to scan for QR Codes</string>
 	<key>UILaunchStoryboardName</key>
