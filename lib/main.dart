@@ -5,12 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 import 'package:eosdart_ecc/eosdart_ecc.dart';
-import 'package:qrcode_flutter/qrcode_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:qrcode_flutter/qrcode_flutter.dart';
 
 import 'ECard.dart';
 import 'ECardsListView.dart';
 import 'ECardsStore.dart';
+import 'ScanView.dart';
 
 void main() => runApp(ECardApp());
 
@@ -49,10 +50,6 @@ class CurrentCard {
 }
 
 class _MainState extends State<Main> with WidgetsBindingObserver {
-  QRCaptureController _controller = QRCaptureController();
-
-  bool _showScan = false;
-
   ECards _ecards;
   CurrentCard _currentCard;
 
@@ -75,7 +72,6 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller.onCapture(_process);
   }
 
   @override
@@ -116,7 +112,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
           title: Text(title),
           actions: <Widget>[
             IconButton(icon: Icon(Icons.list), onPressed: () {_listECards(context);}),
-            IconButton(icon: Icon(Icons.settings_overscan), onPressed: _scan),
+            IconButton(icon: Icon(Icons.settings_overscan), onPressed: () {_scan(context);}),
           ],
         ),
         body: Container(padding: EdgeInsets.all(5), child: Column(children: body))
@@ -152,10 +148,6 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         );
       }
     }
-    else if(_showScan) {
-      _controller.resume();
-      return QRCaptureView(controller: _controller);
-    }
 
     return Container();
   }
@@ -178,10 +170,20 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     });
   }
 
-  void _scan() async {
+  void _scan (BuildContext context) async {
     _currentCard = null;
+
+    String barcode = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) {
+        return ScanView();
+      })
+    );
+
     setState(() {
-      _showScan = true;
+      if(barcode != null) {
+        _process(barcode);
+      }
     });
   }
 
@@ -198,8 +200,6 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   }
 
   void _process(String barcode) {
-    _showScan = false;
-    _controller.pause();
     String data = '';
     String signatureValue;
     bool expired = false;
@@ -266,8 +266,5 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
         }
       }
     }
-    setState(() {
-      
-    });
   }
- }
+}
