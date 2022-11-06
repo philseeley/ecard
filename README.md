@@ -2,6 +2,8 @@
 
 ECards are digitally signed QR Codes for club membership cards. They are digitally signed, so they can be scanned for verification using the ECard Android or iPhone app.
 
+**Note:** Binaries for the ecard command line app can be found under [Releases](https://github.com/philseeley/ecard/releases).
+
 ## Generating Public/Private Key Pairs
 
 To create an ECard, first you must create a public/private key pair using the **ecard genkeys** command:
