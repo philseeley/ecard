@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:args/command_runner.dart';
+import 'package:args/command_runner.dart' as cr;
 import 'package:eosdart_ecc/eosdart_ecc.dart';
 import 'package:image/image.dart';
 import 'package:qr/qr.dart';
 import '../lib/ECard.dart';
 
-class GenKeysCommand extends Command {
+class GenKeysCommand extends cr.Command {
   final name = 'genkeys';
   final description = 'Generates public/private key pairs';
 
@@ -24,14 +24,14 @@ Where arguments are:
   }
 
   void run() {
-    if(argResults.rest.length != 2) {
+    if(argResults?.rest.length != 2) {
       showUsage();
       return;
     }
 
-    String organisation = argResults.rest[0];
-    String privateKeyFilename = argResults.rest[1];
-    String stampFilename = argResults['stamp'];
+    String organisation = argResults!.rest[0];
+    String privateKeyFilename = argResults!.rest[1];
+    String? stampFilename = argResults?['stamp'];
 
     dynamic data = {
       "organisation": organisation,
@@ -47,7 +47,7 @@ Where arguments are:
   }
 }
 
-class SignQRCommand extends Command {
+class SignQRCommand extends cr.Command {
   final name = 'signqr';
   final description = 'Generates a signed QR code';
 
@@ -67,27 +67,27 @@ Where arguments are:
   }
 
   void run() {
-    if(argResults.rest.length != 2) {
+    if(argResults!.rest.length != 2) {
       showUsage();
       return;
     }
 
-    String privateKeyFilename = argResults.rest[0];
-    String dataFilename = argResults.rest[1];
+    String privateKeyFilename = argResults!.rest[0];
+    String dataFilename = argResults!.rest[1];
 
     int sep = dataFilename.lastIndexOf('.');
     String baseFilename = sep == -1 ? dataFilename : dataFilename.substring(0, sep);
 
-    String stampFilename = argResults['stamp'];
-    String pngFilename = argResults['png'];
-    String ecardFilename = argResults['ecard'];
+    String? stampFilename = argResults?['stamp'];
+    String? pngFilename = argResults?['png'];
+    String? ecardFilename = argResults?['ecard'];
 
     if(pngFilename   == null) pngFilename = '$baseFilename.png';
     if(ecardFilename == null) ecardFilename = '$baseFilename.ecard';
 
     Map<String, dynamic> privateKeyData = jsonDecode(File(privateKeyFilename).readAsStringSync());
 
-    String stamp;
+    String? stamp;
 
     if(stampFilename == null)
       stamp = privateKeyData['stamp'];
@@ -113,25 +113,23 @@ Where arguments are:
     lines += '\n';
     lines += signature.toString();
 
-    QrCode qrCode = QrCode.fromData(data: lines, errorCorrectLevel: QrErrorCorrectLevel.M);
-    qrCode.make();
+    QrImage qrCode = QrImage(QrCode.fromData(data: lines, errorCorrectLevel: QrErrorCorrectLevel.M));
 
     int size = qrCode.moduleCount;
 
-    int white = getColor(255, 255, 255);
-    int black = getColor(0, 0, 0);
-
     int sq = 3;
     int br = 10;
-    Image qrCodeImage = Image(size*sq+2*br, size*sq+2*br);
-    qrCodeImage.fill(white);
+    Image qrCodeImage = Image(width: size*sq+2*br, height: size*sq+2*br);
+    Color white = qrCodeImage.getColor(255, 255, 255);
+    Color black = qrCodeImage.getColor(0, 0, 0);
+    qrCodeImage.clear(white);
 
     for (int x = 0; x < size; x++) {
       for (int y = 0; y < size; y++) {
-        int color = qrCode.isDark(y, x) ? black : white;
+        Color color = qrCode.isDark(y, x) ? black : white;
         for (int sx = 0; sx < sq; ++sx) {
           for (int sy = 0; sy < sq; ++sy) {
-            qrCodeImage.setPixelSafe(x*sq+sx+br, y*sq+sy+br, color);
+            qrCodeImage.setPixel(x*sq+sx+br, y*sq+sy+br, color);
           }
         }
       }
@@ -144,7 +142,7 @@ Where arguments are:
     ECard ecard = ECard(
       privateKeyData['organisation'],
       publicKey.toString(),
-      stamp,
+      stamp!,
       base64Encode(qrCodeImageData)
     );
 
@@ -157,7 +155,7 @@ Where arguments are:
 void main(args) {
   exitCode = 1;
 
-  CommandRunner('ecard', 'ECard utility')
+  cr.CommandRunner('ecard', 'ECard utility')
     ..addCommand(GenKeysCommand())
     ..addCommand(SignQRCommand())
     ..run(args);
