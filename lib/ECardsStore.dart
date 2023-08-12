@@ -15,11 +15,11 @@ void createImages(ECard ecard) {
 
 class ECards {
   Map<String,ECard> cards = {};
-  String defaultPublicKey;
+  String? defaultPublicKey;
 }
 
 class ECardsStore {
-  static File _store;
+  static late File _store;
 
   static Future<ECards> loadCards() async {
     ECards ecards = ECards();

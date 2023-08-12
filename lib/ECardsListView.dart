@@ -40,8 +40,9 @@ class ECardsListViewState extends State<ECardsListView> {
         ],
       ),
       body: ListView.builder(itemBuilder: (BuildContext context, int i) {
-        if (i < ecardList.length)
-          return _buildReceiptRow(ecardList[i]);
+        if (i < ecardList.length) {
+          return _buildECardRow(ecardList[i]);
+        }
 
         return null;
       }));
@@ -57,10 +58,11 @@ class ECardsListViewState extends State<ECardsListView> {
   }
 
   void _addECard() async {
-    File f = await FilePicker.getFile();
+    FilePickerResult? fpResult = await FilePicker.platform.pickFiles();
 
-    if(f != null) {
+    if(fpResult != null) {
       setState(() {
+        File f = File(fpResult.files.single.path!);
         ECard ecard = ECard.fromJson(f.readAsStringSync());
         _ecards.cards[ecard.publicKey] = ecard;
         createImages(ecard);
@@ -71,8 +73,8 @@ class ECardsListViewState extends State<ECardsListView> {
     }
   }
 
-  Widget _buildReceiptRow(ECard ecard) {
-    Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headline5.apply(fontWeightDelta: 10));
+  Widget _buildECardRow(ECard ecard) {
+    Text text = Text(ecard.organisation, style: Theme.of(context).textTheme.headlineSmall?.apply(fontWeightDelta: 10));
     ListTile tile;
 
     tile = ListTile(
@@ -81,7 +83,7 @@ class ECardsListViewState extends State<ECardsListView> {
       onTap: () {_select(ecard);},
       trailing: Radio<String>(value: ecard.publicKey, groupValue: _ecards.defaultPublicKey, onChanged: (value) {
         setState(() {
-          _ecards.defaultPublicKey = value;
+          _ecards.defaultPublicKey = value!;
         });
       }),
     );
