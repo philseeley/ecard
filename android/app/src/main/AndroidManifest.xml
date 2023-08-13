@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="name.seeley.phil.ecardapp">
    <application
-        android:label="ECard"
+        android:label="ECards"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
