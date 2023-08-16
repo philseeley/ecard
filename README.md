@@ -68,7 +68,7 @@ The **.ecard** can be loaded into the ECard phone app for display, but also to e
 
 **Note:** you must load an **.ecard** into the phone app in order to verify QR Codes for that club.
 
-After receiving your **.ecard** by email, save it to your phone and then load it into the ECard app through the ![](./examples/screenshots/app-list-cards-icon.png) and ![](./examples/screenshots/app-add-card-icon.png) buttons. If you have added than one ECard, you can select which ECard is displayed when the app is opened:
+After receiving your **.ecard** by email, save it to your phone and then load it into the ECard app through the ![](./examples/screenshots/app-list-cards-icon.png) and ![](./examples/screenshots/app-add-card-icon.png) buttons. If you have added more than one ECard, you can select which ECard is displayed when the app is opened:
 
 ![](./examples/screenshots/app-list-cards.png)
 
