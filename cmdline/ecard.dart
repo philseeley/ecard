@@ -4,14 +4,17 @@ import 'package:args/command_runner.dart' as cr;
 import 'package:eosdart_ecc/eosdart_ecc.dart';
 import 'package:image/image.dart';
 import 'package:qr/qr.dart';
-import '../lib/ECard.dart';
+// ignore: avoid_relative_lib_imports
+import '../lib/ecard.dart';
 
 class GenKeysCommand extends cr.Command {
+  @override
   final name = 'genkeys';
+  @override
   final description = 'Generates public/private key pairs';
 
   void showUsage() {
-    print('''$usage
+    stdout.writeln('''$usage
 
 Where arguments are:
   <organisation name> the name of the organisation the keys are for.
@@ -23,6 +26,7 @@ Where arguments are:
     argParser.addOption('stamp', help: 'the stamp image to use', valueHelp: 'image file');
   }
 
+  @override
   void run() {
     if(argResults?.rest.length != 2) {
       showUsage();
@@ -38,8 +42,7 @@ Where arguments are:
       "privatekey": EOSPrivateKey.fromRandom().toString()
     };
 
-    if(stampFilename != null)
-      data['stamp'] = base64Encode(File(stampFilename).readAsBytesSync());
+    if(stampFilename != null) data['stamp'] = base64Encode(File(stampFilename).readAsBytesSync());
 
     File(privateKeyFilename).writeAsStringSync(json.encode(data));
 
@@ -48,15 +51,17 @@ Where arguments are:
 }
 
 class SignQRCommand extends cr.Command {
+  @override
   final name = 'signqr';
+  @override
   final description = 'Generates a signed QR code';
 
   void showUsage() {
-    print('''$usage
+    stdout.writeln('''$usage
 
 Where arguments are:
   <key file>    the name of the key file.
-  <data file>   the name of the file contaning the data to sign.
+  <data file>   the name of the file containing the data to sign.
 ''');
   }
 
@@ -66,6 +71,7 @@ Where arguments are:
     argParser.addOption('ecard', help: 'the output ECard filename - defaults to <data file>.ecard', valueHelp: 'filename');
   }
 
+  @override
   void run() {
     if(argResults!.rest.length != 2) {
       showUsage();
@@ -82,20 +88,21 @@ Where arguments are:
     String? pngFilename = argResults?['png'];
     String? ecardFilename = argResults?['ecard'];
 
-    if(pngFilename   == null) pngFilename = '$baseFilename.png';
-    if(ecardFilename == null) ecardFilename = '$baseFilename.ecard';
+    pngFilename ??= '$baseFilename.png';
+    ecardFilename ??= '$baseFilename.ecard';
 
     Map<String, dynamic> privateKeyData = jsonDecode(File(privateKeyFilename).readAsStringSync());
 
     String? stamp;
 
-    if(stampFilename == null)
+    if(stampFilename == null) {
       stamp = privateKeyData['stamp'];
-    else
+    } else {
       stamp = base64Encode(File(stampFilename).readAsBytesSync());
+    }
 
     if(stamp == null) {
-      print('No stamp image specified and no stamp image found in "$privateKeyFilename".\n');
+      stdout.writeln('No stamp image specified and no stamp image found in "$privateKeyFilename".\n');
       showUsage();
     }
 
@@ -113,7 +120,7 @@ Where arguments are:
     lines += '\n';
     lines += signature.toString();
 
-    QrImage qrCode = QrImage(QrCode.fromData(data: lines, errorCorrectLevel: QrErrorCorrectLevel.M));
+    QrImage qrCode = QrImage(QrCode(payload: QrPayload.fromString(lines)));
 
     int size = qrCode.moduleCount;
 
@@ -152,7 +159,7 @@ Where arguments are:
   }
 }
 
-void main(args) {
+void main(dynamic args) {
   exitCode = 1;
 
   cr.CommandRunner('ecard', 'ECard utility')

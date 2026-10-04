@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:qr_code_dart_scan/qr_code_dart_scan.dart';
-import 'package:camera_platform_interface/camera_platform_interface.dart';
 
 class ScanView extends StatefulWidget {
 
@@ -11,7 +10,7 @@ class ScanView extends StatefulWidget {
 }
 
 class ScanViewState extends State<ScanView> {
-  QRCodeDartScanController _scanController = QRCodeDartScanController();
+  final QRCodeDartScanController _scanController = QRCodeDartScanController();
   bool _flashOn = false;
 
   @override
@@ -25,7 +24,7 @@ class ScanViewState extends State<ScanView> {
               onPressed: () {
                 setState(() {
                   _flashOn = !_flashOn;
-                  _scanController.setFlashMode(_flashOn ? FlashMode.torch : FlashMode.off);
+                  _scanController.setFlash(_flashOn);
                 });
               }
           )
@@ -33,10 +32,10 @@ class ScanViewState extends State<ScanView> {
       ),
       body: QRCodeDartScanView(
         controller: _scanController,
-        onCapture: (Result result) {
+        onCapture: (ScanResult result) {
           // We have to stop scanning immediately, or else we get called multiple
           // times ad the Navigator gets confused with too many pops.
-          _scanController.setScanEnabled(false);
+          _scanController.stopScan();
           Navigator.pop(context, result.text);
         },
       ),

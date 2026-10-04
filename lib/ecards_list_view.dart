@@ -1,36 +1,24 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:ecardapp/ECardsStore.dart';
+import 'package:ecardapp/ecards_store.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'ECard.dart';
-
-void createImages(ECard ecard) {
-  try {
-    ecard.stampImage = Image.memory(base64Decode(ecard.stamp));
-  } on Exception {}
-  try {
-    ecard.qrCodeImage = Image.memory(base64Decode(ecard.qrCode));
-  } on Exception {}
-}
+import 'ecard.dart';
 
 class ECardsListView extends StatefulWidget {
   final ECards _ecards;
 
-  ECardsListView (this._ecards);
+  const ECardsListView (this._ecards, {super.key});
 
   @override
-  createState() => ECardsListViewState(_ecards);
+  createState() => ECardsListViewState();
 }
 
 class ECardsListViewState extends State<ECardsListView> {
-  final ECards _ecards;
-
-  ECardsListViewState(this._ecards);
+  ECardsListViewState();
 
   @override
   Widget build(BuildContext context) {
-    List<ECard> ecardList = _ecards.cards.values.toList();
+    List<ECard> ecardList = widget._ecards.cards.values.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,36 +27,41 @@ class ECardsListViewState extends State<ECardsListView> {
           IconButton(icon: Icon(Icons.add), onPressed: _addECard)
         ],
       ),
-      body: ListView.builder(itemBuilder: (BuildContext context, int i) {
-        if (i < ecardList.length) {
+      body: RadioGroup<String>(
+        groupValue: widget._ecards.defaultPublicKey,
+        onChanged:  (value) {
+          setState(() {
+            widget._ecards.defaultPublicKey = value!;
+          });
+        },
+        child: ListView.builder(itemCount: ecardList.length, itemBuilder: (BuildContext context, int i) {
           return _buildECardRow(ecardList[i]);
-        }
-
-        return null;
-      }));
-    }
+        })
+      )
+    );
+  }
 
   void _onDismissed (DismissDirection direction, ECard ecard) {
-    _ecards.cards.remove(ecard.publicKey);
-    if(_ecards.cards.length > 0 && _ecards.defaultPublicKey == ecard.publicKey)
+    widget._ecards.cards.remove(ecard.publicKey);
+    if(widget._ecards.cards.isNotEmpty && widget._ecards.defaultPublicKey == ecard.publicKey) {
       setState(() {
-        _ecards.defaultPublicKey = _ecards.cards.keys.first;
+        widget._ecards.defaultPublicKey = widget._ecards.cards.keys.first;
       });
-    ECardsStore.saveCards(_ecards);
+    }
+    ECardsStore.saveCards(widget._ecards);
   }
 
   void _addECard() async {
-    FilePickerResult? fpResult = await FilePicker.platform.pickFiles();
+    var fpResult = await FilePicker.pickFile();
 
     if(fpResult != null) {
       setState(() {
-        File f = File(fpResult.files.single.path!);
+        File f = File(fpResult.path!);
         ECard ecard = ECard.fromJson(f.readAsStringSync());
-        _ecards.cards[ecard.publicKey] = ecard;
+        widget._ecards.cards[ecard.publicKey] = ecard;
         createImages(ecard);
-        if(_ecards.cards.length == 1)
-          _ecards.defaultPublicKey = ecard.publicKey;
-        ECardsStore.saveCards(_ecards);
+        if(widget._ecards.cards.length == 1) widget._ecards.defaultPublicKey = ecard.publicKey;
+        ECardsStore.saveCards(widget._ecards);
       });
     }
   }
@@ -78,14 +71,10 @@ class ECardsListViewState extends State<ECardsListView> {
     ListTile tile;
 
     tile = ListTile(
-      leading: ecard?.stampImage,
+      leading: ecard.stampImage,
       title: text,
       onTap: () {_select(ecard);},
-      trailing: Radio<String>(value: ecard.publicKey, groupValue: _ecards.defaultPublicKey, onChanged: (value) {
-        setState(() {
-          _ecards.defaultPublicKey = value!;
-        });
-      }),
+      trailing: Radio<String>(value: ecard.publicKey),
     );
     
     return Dismissible(

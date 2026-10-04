@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:ecardapp/ScanView.dart';
+import 'package:ecardapp/scan_view.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
@@ -9,20 +9,25 @@ import 'package:path_provider/path_provider.dart';
 import 'package:eosdart_ecc/eosdart_ecc.dart';
 import 'package:qr_code_dart_scan/qr_code_dart_scan.dart';
 
-import 'ECard.dart';
-import 'ECardsListView.dart';
-import 'ECardsStore.dart';
+import 'ecard.dart';
+import 'ecards_list_view.dart';
+import 'ecards_store.dart';
 
 void main() => runApp(ECardApp());
 
 class ECardApp extends StatelessWidget {
+  const ECardApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     TextStyle? ts = Theme.of(context).textTheme.titleMedium?.apply(fontWeightDelta: 4);
 
     return MaterialApp(
       home: Main(),
-      theme: ThemeData(textTheme: TextTheme(bodyText2: ts, subtitle1: ts)),
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+        textTheme: TextTheme(bodyLarge: ts, titleMedium: ts)
+      ),
       debugShowCheckedModeBanner: false
     );
   }
@@ -32,13 +37,13 @@ class Main extends StatefulWidget {
   const Main({super.key});
 
   @override
-  _MainState createState() => _MainState();
+  State<Main> createState() => _MainState();
 }
 
 class CardLine {
-  String _tag;
-  Color _flag;
-  String _value;
+  final String _tag;
+  final Color _flag;
+  final String _value;
 
   CardLine(this._tag, this._flag, this._value);
 }
@@ -80,6 +85,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch(state)
     {
+      case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
@@ -201,7 +207,7 @@ class _MainState extends State<Main> with WidgetsBindingObserver {
     File f = File('${dir.path}/tmp');
     f.writeAsBytesSync(base64Decode(_currentCard!.ecard!.qrCode));
     XFile file = XFile(f.path);
-    Result? result = await decoder.decodeFile(file);
+    ScanResult? result = await decoder.decodeFile(file);
 
     setState(() {
       if(result != null) {
